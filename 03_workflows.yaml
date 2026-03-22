@@ -1,0 +1,119 @@
+version: 1
+agent: Construction Pro Agent
+workflows:
+  open_project:
+    steps:
+      - load_project_metadata
+      - load_latest_files
+      - load_open_issues
+      - load_recent_outputs
+      - summarize_project_state
+
+  create_site_diary:
+    required_inputs:
+      - project_id
+      - date
+    optional_inputs:
+      - voice_notes
+      - text_notes
+      - photos
+      - weather
+      - attendee_list
+    steps:
+      - transcribe_voice_if_present
+      - merge_text_and_transcripts
+      - classify_content_into_sections
+      - extract_facts_only
+      - identify_unclear_fragments
+      - format_into_diary_template
+      - attach_photos_with_captions
+      - generate_follow_up_actions
+      - save_draft_version
+      - export_pdf_docx_email_if_requested
+    outputs:
+      - site_diary_draft
+      - control_day_summary
+      - follow_up_list
+
+  review_estimate:
+    required_inputs:
+      - project_id
+      - estimate_file
+    optional_inputs:
+      - scope_description
+      - documentation_files
+      - reference_price_table
+    steps:
+      - parse_estimate
+      - normalize_line_items
+      - group_by_sections
+      - detect_duplicates
+      - detect_vague_items
+      - detect_missing_sections_basic
+      - compare_with_reference_if_available
+      - compare_versions_if_previous_exists
+      - generate_findings_table
+      - generate_questions_for_contractor
+      - save_review_output
+    outputs:
+      - estimate_review_report
+      - contractor_question_list
+      - comparison_summary
+
+  create_draft_estimate:
+    required_inputs:
+      - project_id
+    optional_inputs:
+      - scope_description
+      - boq
+      - drawings
+      - reference_price_table
+    steps:
+      - identify_project_type
+      - infer_estimate_sections_from_inputs
+      - generate_sectioned_draft_structure
+      - insert_reference_prices_if_available
+      - mark_missing_data_positions
+      - save_draft_estimate
+    outputs:
+      - draft_estimate
+      - missing_input_list
+
+  continue_project:
+    required_inputs:
+      - project_id
+    steps:
+      - load_latest_context
+      - load_last_open_actions
+      - identify_pending_reviews
+      - present_resume_options
+    outputs:
+      - project_resume_summary
+
+  generate_document:
+    required_inputs:
+      - project_id
+      - template_type
+      - source_record_id
+    optional_inputs:
+      - logo_asset
+      - signature_asset
+      - stamp_asset
+    steps:
+      - load_template
+      - inject_project_branding
+      - render_document
+      - create_pdf_docx_versions
+      - save_export_record
+    outputs:
+      - pdf_file
+      - docx_file
+
+  handle_missing_data:
+    steps:
+      - identify_missing_fields
+      - map_each_field_to_required_source
+      - stop_high_confidence_conclusion
+      - return_missing_data_request
+    outputs:
+      - missing_data_report

@@ -1,0 +1,34 @@
+{
+    "czech": {
+        "hydroizolace": "waterproofing",
+        "betonování": "concrete pouring",
+        "fasáda": "facade",
+        "omítky": "plastering",
+        "elektroinstalace": "electrical",
+        "výkopy": "excavation",
+        "malování": "painting"
+    },
+    "russian": {
+        "гидроизоляция": "waterproofing",
+        "бетонирование": "concrete pouring",
+        "фасад": "facade",
+        "штукатурка": "plastering",
+        "электричество": "electrical",
+        "электрика": "electrical",
+        "котлован": "excavation",
+        "выемка грунта": "excavation",
+        "покраска": "painting",
+        "малярные работы": "painting"
+    },
+    "ukrainian": {
+        "гідроізоляція": "waterproofing",
+        "бетонування": "concrete pouring",
+        "фасад": "facade",
+        "штукатурка": "plastering",
+        "електрика": "electrical",
+        "електромонтаж": "electrical",
+        "котлован": "excavation",
+        "виїмка ґрунту": "excavation",
+        "фарбування": "painting"
+    }
+}

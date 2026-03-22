@@ -1,0 +1,145 @@
+{
+  "entities": {
+    "Project": {
+      "fields": [
+        "project_id",
+        "project_name",
+        "address",
+        "country",
+        "language",
+        "project_stage",
+        "created_at",
+        "updated_at",
+        "owner_user_id"
+      ]
+    },
+    "ProjectParticipant": {
+      "fields": [
+        "participant_id",
+        "project_id",
+        "name",
+        "role",
+        "company",
+        "email",
+        "phone"
+      ]
+    },
+    "ProjectFile": {
+      "fields": [
+        "file_id",
+        "project_id",
+        "file_name",
+        "file_type",
+        "category",
+        "version",
+        "uploaded_by",
+        "uploaded_at",
+        "storage_path",
+        "source_status"
+      ],
+      "category_examples": [
+        "estimate",
+        "drawing",
+        "specification",
+        "site_photo",
+        "voice_note",
+        "report",
+        "reference_price_table",
+        "template_asset"
+      ]
+    },
+    "SiteDiaryEntry": {
+      "fields": [
+        "diary_id",
+        "project_id",
+        "entry_date",
+        "author",
+        "summary",
+        "weather",
+        "participants_json",
+        "sections_json",
+        "open_issues_json",
+        "follow_up_json",
+        "status",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "EstimateRecord": {
+      "fields": [
+        "estimate_id",
+        "project_id",
+        "title",
+        "source_file_id",
+        "estimate_type",
+        "version",
+        "currency",
+        "status",
+        "created_at"
+      ],
+      "estimate_type_examples": [
+        "contractor_estimate",
+        "draft_estimate",
+        "reference_estimate"
+      ]
+    },
+    "EstimateLineItem": {
+      "fields": [
+        "line_id",
+        "estimate_id",
+        "section",
+        "item_name",
+        "unit",
+        "quantity",
+        "unit_price",
+        "total_price",
+        "normalized_label",
+        "notes"
+      ]
+    },
+    "IssueLog": {
+      "fields": [
+        "issue_id",
+        "project_id",
+        "source_type",
+        "source_record_id",
+        "title",
+        "description",
+        "priority",
+        "status",
+        "created_at",
+        "updated_at",
+        "assignee"
+      ],
+      "status_examples": [
+        "open",
+        "in_progress",
+        "waiting",
+        "resolved",
+        "closed"
+      ]
+    },
+    "GeneratedDocument": {
+      "fields": [
+        "document_id",
+        "project_id",
+        "template_type",
+        "source_record_id",
+        "pdf_path",
+        "docx_path",
+        "generated_at",
+        "branding_profile_id"
+      ]
+    },
+    "BrandingProfile": {
+      "fields": [
+        "branding_profile_id",
+        "owner_user_id",
+        "logo_file_id",
+        "signature_file_id",
+        "stamp_file_id",
+        "default_company_name"
+      ]
+    }
+  }
+}

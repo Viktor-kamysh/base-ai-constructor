@@ -1,0 +1,21 @@
+version: 1
+tech_supervision_rules:
+  - process_keyword: "waterproofing"
+    required_fields:
+      - weather_conditions
+      - photos
+    max_overspend_pct: 15
+    note: "Waterproofing requires strict environmental logging and photo documentation."
+
+  - process_keyword: "concrete"
+    required_fields:
+      - weather_conditions
+      - concrete_grade
+    max_overspend_pct: 10
+    note: "Concrete casting must log weather (temperature) and the specific grade used."
+
+  - process_keyword: "facade"
+    required_fields:
+      - weather_conditions
+    max_overspend_pct: 20
+    note: "Facade works require weather logging (wind/rain)."

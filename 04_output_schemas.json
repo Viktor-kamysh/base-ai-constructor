@@ -1,0 +1,77 @@
+{
+  "estimateFinding": {
+    "type": "object",
+    "required": ["section", "item_name", "status", "confidence", "basis"],
+    "properties": {
+      "section": {"type": "string"},
+      "item_name": {"type": "string"},
+      "status": {
+        "type": "string",
+        "enum": ["found", "missing", "unclear", "duplicate", "needs_review", "insufficient_data"]
+      },
+      "confidence": {
+        "type": "string",
+        "enum": ["high", "medium", "low"]
+      },
+      "basis": {"type": "string"},
+      "comment": {"type": "string"},
+      "recommended_action": {"type": "string"}
+    }
+  },
+  "missingDataReport": {
+    "type": "object",
+    "required": ["available_data", "missing_data", "why_needed"],
+    "properties": {
+      "available_data": {"type": "array", "items": {"type": "string"}},
+      "missing_data": {"type": "array", "items": {"type": "string"}},
+      "why_needed": {"type": "array", "items": {"type": "string"}},
+      "suggested_source": {"type": "array", "items": {"type": "string"}}
+    }
+  },
+  "siteDiary": {
+    "type": "object",
+    "required": ["project_name", "date", "summary", "sections", "draft_status"],
+    "properties": {
+      "project_name": {"type": "string"},
+      "date": {"type": "string"},
+      "author": {"type": "string"},
+      "summary": {"type": "string"},
+      "weather": {"type": "string"},
+      "participants": {"type": "array", "items": {"type": "string"}},
+      "sections": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["title", "content"],
+          "properties": {
+            "title": {"type": "string"},
+            "content": {"type": "string"}
+          }
+        }
+      },
+      "open_issues": {"type": "array", "items": {"type": "string"}},
+      "follow_up_actions": {"type": "array", "items": {"type": "string"}},
+      "photo_captions": {"type": "array", "items": {"type": "string"}},
+      "draft_status": {"type": "string", "enum": ["draft_for_review"]}
+    }
+  },
+  "contractorQuestionList": {
+    "type": "object",
+    "required": ["project_name", "questions"],
+    "properties": {
+      "project_name": {"type": "string"},
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["topic", "question"],
+          "properties": {
+            "topic": {"type": "string"},
+            "question": {"type": "string"},
+            "priority": {"type": "string", "enum": ["high", "medium", "low"]}
+          }
+        }
+      }
+    }
+  }
+}
