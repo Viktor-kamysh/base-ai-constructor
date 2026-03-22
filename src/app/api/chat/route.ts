@@ -48,7 +48,7 @@ async function generateAiReply(userMessage: string): Promise<string> {
     if (apiKey) {
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-latest' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
             const result = await model.generateContent(`${SYSTEM_PROMPT}\n\nUser: ${userMessage}`);
             return result.response.text() || 'No response generated.';
         } catch (geminiErr) {
@@ -110,19 +110,24 @@ export async function POST(request: Request) {
         const userMsg: ChatMessage = { role: 'user', text: message };
         const updatedHistory: ChatMessage[] = [...history, userMsg];
 
-        // Generate AI reply
-        const aiText = await generateAiReply(message);
-        const aiMsg: ChatMessage = { role: 'ai', text: aiText };
-        updatedHistory.push(aiMsg);
+        try {
+            // Generate AI reply
+            const aiText = await generateAiReply(message);
+            const aiMsg: ChatMessage = { role: 'ai', text: aiText };
+            updatedHistory.push(aiMsg);
+        } catch (aiError) {
+            console.error('[chat] AI API Error:', aiError);
+            updatedHistory.push({ role: 'ai', text: '⚠️ Системное сообщение: Ошибка провайдера ИИ. Возможно, исчерпан лимит в 20 запросов в сутки или ключ недействителен. Подробности в логах сервера.' });
+        }
 
         // Persist to DB
         saveHistory(db, projectId, updatedHistory);
         db.close();
 
-        // Return the full updated array directly (not wrapped in an object)
+        // Return the full updated array directly
         return NextResponse.json(updatedHistory);
     } catch (error) {
-        console.error('[chat POST] error:', error);
+        console.error('[chat POST] Critical error:', error);
         return NextResponse.json([]);
     }
 }
