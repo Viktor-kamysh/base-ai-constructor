@@ -48,7 +48,7 @@ async function generateAiReply(userMessage: string): Promise<string> {
     if (apiKey) {
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-latest' });
             const result = await model.generateContent(`${SYSTEM_PROMPT}\n\nUser: ${userMessage}`);
             return result.response.text() || 'No response generated.';
         } catch (geminiErr) {
