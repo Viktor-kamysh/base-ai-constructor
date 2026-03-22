@@ -61,5 +61,18 @@ export class OpenAIAdapter implements AIProvider {
     }
 }
 
-// Default export instance (singleton)
-export const aiProvider = new OpenAIAdapter();
+// Lazy singleton — only instantiated on first actual request, not at module load time.
+// This prevents "Missing credentials" errors during `next build` when OPENAI_API_KEY isn't set.
+let _aiProvider: OpenAIAdapter | null = null;
+export const aiProvider = {
+    get instance(): OpenAIAdapter {
+        if (!_aiProvider) _aiProvider = new OpenAIAdapter();
+        return _aiProvider;
+    },
+    generateText(systemPrompt: string, userPrompt: string): Promise<string> {
+        return this.instance.generateText(systemPrompt, userPrompt);
+    },
+    generateStructured<T>(...args: Parameters<OpenAIAdapter['generateStructured']>): ReturnType<OpenAIAdapter['generateStructured']> {
+        return this.instance.generateStructured<T>(...args) as ReturnType<OpenAIAdapter['generateStructured']>;
+    }
+};
