@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { aiProvider } from '@/lib/ai/openai';
 import Database from 'better-sqlite3';
 import path from 'path';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const dbPath = path.join(process.cwd(), 'data.db');
 
@@ -15,99 +15,114 @@ You help project managers and site engineers with:
 
 Always respond in a concise, professional manner. If you need more context, ask a targeted question.`;
 
-// GET /api/chat?projectId=xxx   — returns plain array (never wrapped in an object)
+type ChatMessage = { role: 'user' | 'ai'; text: string };
+
+function getDb() {
+    return new Database(dbPath);
+}
+
+function loadHistory(db: Database.Database, projectId: string): ChatMessage[] {
+    try {
+        const row = db.prepare('SELECT chat_history FROM projects WHERE id = ?').get(projectId) as { chat_history: string | null } | undefined;
+        if (!row || !row.chat_history) return [];
+        const parsed = JSON.parse(row.chat_history);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveHistory(db: Database.Database, projectId: string, history: ChatMessage[]) {
+    db.prepare('UPDATE projects SET chat_history = ? WHERE id = ?').run(JSON.stringify(history), projectId);
+}
+
+function resolveProjectId(db: Database.Database, providedId?: string): string | null {
+    if (providedId) return providedId;
+    // Fallback: use first project in DB so MVP works even if frontend doesn't send projectId
+    const row = db.prepare('SELECT id FROM projects LIMIT 1').get() as { id: string } | undefined;
+    return row?.id ?? null;
+}
+
+async function generateAiReply(userMessage: string): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (apiKey) {
+        try {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+            const result = await model.generateContent(`${SYSTEM_PROMPT}\n\nUser: ${userMessage}`);
+            return result.response.text() || 'No response generated.';
+        } catch (geminiErr) {
+            console.error('[chat] Gemini error:', geminiErr);
+        }
+    }
+
+    // Fallback to OpenAI if Gemini key not available
+    try {
+        const { aiProvider } = await import('@/lib/ai/openai');
+        return await aiProvider.generateText(SYSTEM_PROMPT, userMessage);
+    } catch (openaiErr) {
+        console.error('[chat] OpenAI fallback error:', openaiErr);
+        throw new Error('AI provider unavailable');
+    }
+}
+
+// GET /api/chat?projectId=xxx  — returns plain array
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
 
-    if (!projectId) {
-        return NextResponse.json([]);
-    }
+    if (!projectId) return NextResponse.json([]);
 
     try {
-        const db = new Database(dbPath);
-        const row = db.prepare('SELECT chat_history FROM projects WHERE id = ?').get(projectId) as { chat_history: string | null } | undefined;
+        const db = getDb();
+        const history = loadHistory(db, projectId);
         db.close();
-
-        if (!row || !row.chat_history) {
-            return NextResponse.json([]);
-        }
-
-        try {
-            const parsed = JSON.parse(row.chat_history);
-            return NextResponse.json(Array.isArray(parsed) ? parsed : []);
-        } catch {
-            return NextResponse.json([]);
-        }
+        return NextResponse.json(history);
     } catch (err) {
-        console.error('[chat GET] DB error:', err);
+        console.error('[chat GET] error:', err);
         return NextResponse.json([]);
     }
 }
 
-// POST /api/chat   — saves a user message, generates AI reply, persists full history
+// POST /api/chat  — saves user message, generates AI reply, returns full updated array
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { projectId, message } = body;
+        const { message, projectId: rawProjectId } = body;
 
         if (!message || typeof message !== 'string') {
-            return NextResponse.json(
-                { error: 'missing_required_fields', response_text: 'Message is required.' },
-                { status: 400 }
-            );
+            return NextResponse.json([], { status: 400 });
+        }
+
+        const db = getDb();
+        const projectId = resolveProjectId(db, rawProjectId);
+
+        if (!projectId) {
+            db.close();
+            console.error('[chat POST] No project found in DB');
+            return NextResponse.json([]);
         }
 
         // Load existing history
-        let history: { role: 'user' | 'assistant'; content: string }[] = [];
-        if (projectId) {
-            try {
-                const db = new Database(dbPath);
-                const row = db.prepare('SELECT chat_history FROM projects WHERE id = ?').get(projectId) as { chat_history: string | null } | undefined;
-                db.close();
-                if (row?.chat_history) {
-                    const parsed = JSON.parse(row.chat_history);
-                    if (Array.isArray(parsed)) history = parsed;
-                }
-            } catch {
-                history = [];
-            }
-        }
+        const history = loadHistory(db, projectId);
 
-        // Generate AI response
-        const responseText = await aiProvider.generateText(SYSTEM_PROMPT, message);
-        const aiReply = responseText || 'No response generated.';
+        // Add user message
+        const userMsg: ChatMessage = { role: 'user', text: message };
+        const updatedHistory: ChatMessage[] = [...history, userMsg];
 
-        // Build updated history
-        const updatedHistory = [
-            ...history,
-            { role: 'user' as const, content: message },
-            { role: 'assistant' as const, content: aiReply }
-        ];
+        // Generate AI reply
+        const aiText = await generateAiReply(message);
+        const aiMsg: ChatMessage = { role: 'ai', text: aiText };
+        updatedHistory.push(aiMsg);
 
         // Persist to DB
-        if (projectId) {
-            try {
-                const db = new Database(dbPath);
-                db.prepare('UPDATE projects SET chat_history = ? WHERE id = ?').run(
-                    JSON.stringify(updatedHistory),
-                    projectId
-                );
-                db.close();
-            } catch (dbErr) {
-                console.error('[chat POST] DB save error:', dbErr);
-            }
-        }
+        saveHistory(db, projectId, updatedHistory);
+        db.close();
 
-        return NextResponse.json({
-            response_text: aiReply,
-            messages: updatedHistory
-        });
+        // Return the full updated array directly (not wrapped in an object)
+        return NextResponse.json(updatedHistory);
     } catch (error) {
-        console.error('[chat POST] Error:', error);
-        return NextResponse.json(
-            { response_text: 'Internal server error. Please try again.', messages: [] },
-            { status: 500 }
-        );
+        console.error('[chat POST] error:', error);
+        return NextResponse.json([]);
     }
 }
